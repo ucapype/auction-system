@@ -32,9 +32,9 @@ header("refresh:5;url=index.php");*/
 if(!empty($_POST["email"]) && !empty($_POST["password"]))
 {
     $DBHOST = "localhost";
-    $DBUSER = "root";
-    $DBPWD = "";
-    $DBNAME = "auction_3";
+$DBUSER = "root";
+$DBPWD = "123456";
+$DBNAME = "auction_3";
 
     $conn = new mysqli($DBHOST, $DBUSER, $DBPWD, $DBNAME);
     if($conn->connect_error)
@@ -44,7 +44,7 @@ if(!empty($_POST["email"]) && !empty($_POST["password"]))
 
     // Check if the username and password are correct.
     $email = $_POST["email"];
-    $statement = "SELECT * FROM account where emailAddress=?";
+    $statement = "SELECT * FROM account WHERE emailAddress=?";
     $stmt = $conn->prepare($statement);
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -52,7 +52,7 @@ if(!empty($_POST["email"]) && !empty($_POST["password"]))
     $row = $result->fetch_assoc();
     $hash = $row["password"];
     $account_type = $row["accountType"];
-    $user_Id = $row['userId'];
+    $user_Id = $row["userId"];
 
     if(password_verify($_POST["password"], $hash))
     {

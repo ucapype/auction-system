@@ -20,7 +20,7 @@
               <i class="fa fa-search"></i>
             </span>
           </div>
-          <input type="text" class="form-control border-left-0" id="keyword" placeholder="Search for anything">
+          <input type="text" class="form-control border-left-0" id="keyword" placeholder="Search for anything", name="keyword">
         </div>
       </div>
     </div>
@@ -29,9 +29,11 @@
         <label for="cat" class="sr-only">Search within:</label>
         <select class="form-control" id="cat">
           <option selected value="all">All categories</option>
-          <option value="fill">Fill me in</option>
-          <option value="with">with options</option>
-          <option value="populated">populated from a database?</option>
+          <option value="tops">Tops</option>
+          <option value="bottoms">Bottoms</option>
+          <option value="dresses">Dresses</option>
+          <option value="shoes">Shoes</option>
+          <option value="accessories">Accessories</option>
         </select>
       </div>
     </div>
@@ -41,7 +43,8 @@
         <select class="form-control" id="order_by">
           <option selected value="pricelow">Price (low to high)</option>
           <option value="pricehigh">Price (high to low)</option>
-          <option value="date">Soonest expiry</option>
+          <option value="endDate">Soonest expiry</option>
+          <option value="bid_number">Popularity</option>
         </select>
       </div>
     </div>
@@ -59,23 +62,43 @@
   // Retrieve these from the URL
   if (!isset($_GET['keyword'])) {
     // TODO: Define behavior if a keyword has not been specified.
+    $keyword = "%%";  
+    // echo "Please enter keyword.";
   }
   else {
-    $keyword = $_GET['keyword'];
+    $key_search = $_GET['keyword'];
+    $keyword = "%{$key_search}%";
   }
 
   if (!isset($_GET['cat'])) {
     // TODO: Define behavior if a category has not been specified.
+    $category = "all";
   }
   else {
+    // $category = $_GET['cat'];
     $category = $_GET['cat'];
   }
   
   if (!isset($_GET['order_by'])) {
     // TODO: Define behavior if an order_by value has not been specified.
+    $ordering = "bid_number";
+    $direction = "DESC";
   }
   else {
-    $ordering = $_GET['order_by'];
+    $ordering_title = $_GET['order_by'];
+    if ($ordering_title == "pricehigh"){
+      $ordering = "bidPrice";
+      $direction = "DESC";
+    }
+    elseif($ordering_title == "pricelow"){
+      $ordering = "bidPrice";
+      $direction = "ASC";
+    }
+    else{
+      $ordering = $ordering_title;
+      $direction = "DESC";
+    }
+
   }
   
   if (!isset($_GET['page'])) {
@@ -88,12 +111,68 @@
   /* TODO: Use above values to construct a query. Use this query to 
      retrieve data from the database. (If there is no form data entered,
      decide on appropriate default value/default query to make. */
+  // $connection = mysqli_connect('localhost','exampleuser','mypassword','Example') or die('Error connecting to MySQL server.' . mysql_error());
   
+
+  
+// Connect to the database
+$DBHOST = "localhost";
+$DBUSER = "root";
+$DBPWD = "123456";
+$DBNAME = "auction_3";
+
+$connection = new mysqli($DBHOST, $DBUSER, $DBPWD, $DBNAME);	
+ if($connection->connect_error)
+ {
+ die("Connection failed!".$connection->connect_error);
+ }
+
+
+  // $search_with_cat = "SELECT * FROM itemauction WHERE auctionTitle LIKE ? OR itemDescription LIKE ? AND category = ? ORDER BY ? ?";
+  $search_with_cat = "SELECT * FROM itemauction WHERE auctionTitle LIKE ? OR itemDescription LIKE ? AND category = ? ";
+  // $search_without_cat = "SELECT * FROM itemauction WHERE auctionTitle LIKE ? OR itemDescription LIKE ? ORDER BY ? ?" ;
+  $search_without_cat = "SELECT * FROM itemauction WHERE auctionTitle LIKE ? OR itemDescription LIKE ? ORDER BY ?" ;
+
+  
+  // if ($category = "") {
+  //   //$search_results = mysqli_query($connection,$search_without_cat);
+  //   $stmt = $connection->prepare($search_without_cat);
+  //   $stmt->bind_param("ss", $keyword, $keyword);
+  //   $stmt->execute();
+  //   $search_results = $stmt->get_result();
+  // }
+
+
+if ($category = "all"){
+  $stmt = $connection->prepare($search_without_cat);
+  $stmt->bind_param("sss", $keyword, $keyword, $ordering);
+  $stmt->execute();
+  $search_results = $stmt->get_result();
+}
+else{
+  $stmt = $connection->prepare($search_with_cat);
+  $stmt->bind_param("sss", $keyword, $keyword, $category);
+  $stmt->execute();
+  $search_results = $stmt->get_result();
+  }
+
+    
+  $count_search = "SELECT COUNT(*) FROM itemauction WHERE auctionTitle LIKE ? OR itemDescription LIKE ? ";       
+  //$num_results = mysqli_query($connection,$count_search); 
+  $stmt = $connection->prepare($count_search);
+  $stmt->bind_param("ss", $keyword, $keyword);
+  $stmt->execute();
+  $results = $stmt->get_result();
+  $row = $results->fetch_assoc();
+  $num_results = $row["COUNT(*)"];
+
+
+  //mysqli_close($connection);
   /* For the purposes of pagination, it would also be helpful to know the
      total number of results that satisfy the above query */
-  $num_results = 96; // TODO: Calculate me for real
-  $results_per_page = 10;
-  $max_page = ceil($num_results / $results_per_page);
+  // TODO: Calculate me for real
+  // $results_per_page = 10;
+  // $max_page = ceil($num_results / $results_per_page);
 ?>
 
 <div class="container mt-5">
@@ -102,30 +181,28 @@
 
 <ul class="list-group">
 
-<!-- TODO: Use a while loop to print a list item for each auction listing
-     retrieved from the query -->
+<?php 
 
-<?php
-  // Demonstration of what listings will look like using dummy data.
-  $item_id = "87021";
-  $title = "Dummy title";
-  $description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum eget rutrum ipsum. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Phasellus feugiat, ipsum vel egestas elementum, sem mi vestibulum eros, et facilisis dui nisi eget metus. In non elit felis. Ut lacus sem, pulvinar ultricies pretium sed, viverra ac sapien. Vivamus condimentum aliquam rutrum. Phasellus iaculis faucibus pellentesque. Sed sem urna, maximus vitae cursus id, malesuada nec lectus. Vestibulum scelerisque vulputate elit ut laoreet. Praesent vitae orci sed metus varius posuere sagittis non mi.";
-  $current_price = 30;
-  $num_bids = 1;
-  $end_date = new DateTime('2020-09-16T11:00:00');
+if ($num_results == 0) {
+  echo "<h2> There were no results for this search </h2>";
+}
+else{
   
-  // This uses a function defined in utilities.php
-  print_listing_li($item_id, $title, $description, $current_price, $num_bids, $end_date);
-  
-  $item_id = "516";
-  $title = "Different title";
-  $description = "Very short description.";
-  $current_price = 13.50;
-  $num_bids = 3;
-  $end_date = new DateTime('2020-11-02T00:00:00');
-  
-  print_listing_li($item_id, $title, $description, $current_price, $num_bids, $end_date);
+  while($row = $search_results->fetch_assoc()){
+    $item_id = $row["auctionId"];
+    $title = $row["auctionTitle"];
+    $description = $row["itemDescription"];
+    $current_price = $row["bidPrice"];;
+    $num_bids = "This needs to be done";
+    $end_date = $row["endDate"];;
+    print_listing_li($item_id, $title, $description, $current_price, $num_bids, $end_date);
+}
+
+}
+$results_per_page = 5;
+$max_page = ceil($num_results / $results_per_page);
 ?>
+
 
 </ul>
 

@@ -1,13 +1,10 @@
 <?php include_once("header.php")?>
 
 <?php
-/* (Uncomment this block to redirect people without selling privileges away from this page)
-  // If user is not logged in or not a seller, they should not be able to
-  // use this page.
+
   if (!isset($_SESSION['account_type']) || $_SESSION['account_type'] != 'seller') {
     header('Location: browse.php');
   }
-*/
 ?>
 
 <div class="container">
@@ -43,10 +40,12 @@
           <label for="auctionCategory" class="col-sm-2 col-form-label text-right">Category</label>
           <div class="col-sm-10">
             <select class="form-control" id="auctionCategory" name = "auctionCategory">
-              <option selected>Choose...</option>
-              <option value="fill">Fill me in</option>
-              <option value="with">with options</option>
-              <option value="populated">populated from a database?</option>
+              <option selected value="all">All categories</option>
+              <option value="tops">Tops</option>
+              <option value="bottoms">Bottoms</option>
+              <option value="dresses">Dresses</option>
+              <option value="shoes">Shoes</option>
+              <option value="accessories">Accessories</option>
             </select>
             <small id="categoryHelp" class="form-text text-muted"><span class="text-danger">* Required.</span> Select a category for this item.</small>
           </div>
