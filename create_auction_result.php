@@ -19,7 +19,7 @@
 
 $DBHOST = "localhost";
 $DBUSER = "root";
-$DBPWD = "";
+$DBPWD = "123456";
 $DBNAME = "auction_3";
 $conn = new mysqli($DBHOST, $DBUSER, $DBPWD, $DBNAME);
 //session_start();
@@ -37,6 +37,7 @@ $start_price = $_POST["auctionStartPrice"];
 $reserve_price = $_POST["auctionReservePrice"];
 $start_date = $_POST["auctionStartDate"];
 $end_date = $_POST["auctionEndDate"];
+$bid_price = $_POST["auctionStartPrice"];
 
 /* TODO #3: If everything looks good, make the appropriate call to insert
             data into the database. */
@@ -44,14 +45,15 @@ $end_date = $_POST["auctionEndDate"];
 //VALUES ( $title, '$description , $category, $start_price , $reserve_price, $start_date, $end_date)";
 
 
-$statement = "INSERT INTO itemAuction(sellerId, auctionTitle, itemDescription, category, startingPrice, reservePrice, startDate, endDate) VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+$statement = "INSERT INTO itemAuction(sellerId, auctionTitle, itemDescription, category, startingPrice, reservePrice, startDate, endDate, bidPrice) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($statement);
-$stmt->bind_param("ssssssss",$sellerId, $title, $description , $category, $start_price , $reserve_price, $start_date, $end_date);
+$stmt->bind_param("sssssssss",$sellerId, $title, $description , $category, $start_price , $reserve_price, $start_date, $end_date, $bid_price);
 $stmt->execute();
 
 $conn->close();
 // If all is successful, let user know.
 echo('<div class="text-center">Auction successfully created! <a href="FIXME">View your new listing.</a></div>');
+
 
 
 ?>

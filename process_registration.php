@@ -17,7 +17,7 @@
 // Please make sure the names match to the ones on your computer.
 $DBHOST = "localhost";
 $DBUSER = "root";
-$DBPWD = "";
+$DBPWD = "123456";
 $DBNAME = "auction_3";
 $conn = new mysqli($DBHOST, $DBUSER, $DBPWD, $DBNAME);
 
@@ -65,11 +65,21 @@ if(!empty($_POST["accountType"]) && !empty($_POST["email"]) && !empty($_POST["pa
             $stmt = $conn->prepare($statement);
             $stmt->bind_param("ssssss", $email, $hashed, $fname, $lname, $accountType, $display_name);
             $stmt->execute();
+            
+            // Extract "UserID" from the database
+            $statement = "SELECT * FROM account WHERE emailAddress=?";
+            $stmt = $conn->prepare($statement);
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $user_ID = $row["userId"];
 
             // Automatically logged user in, and direct them to the browse.php .
             session_start();
             $_SESSION["account_type"] = $accountType;
             $_SESSION["logged_in"] = true;
+            $_SESSION["userId"] = $user_ID;
             echo('<div class="text-center">Successfully registered! You will be redirected shortly.</div>');
             header("refresh:5;url=browse.php");
             } 

@@ -1,5 +1,17 @@
 <?php
 
+// connect_to_database:
+// This function connects to the database
+function connect_to_database($dbhost, $dbuser, $dbpwd, $dbname)
+{
+  $conn = new mysqli($dbhost, $dbuser, $dbpwd, $dbname);	
+  if($conn->connect_error)
+  {
+    die("Connection failed!".$conn->connect_error);
+  }
+}
+
+
 // display_time_remaining:
 // Helper function to help figure out what time to display
 function display_time_remaining($interval) {
@@ -43,12 +55,12 @@ function print_listing_li($item_id, $title, $desc, $price, $num_bids, $end_time)
   
   // Calculate time to auction end
   $now = new DateTime();
-  if ($now > $end_time) {
+  if ($now > date_create($end_time)) {
     $time_remaining = 'This auction has ended';
   }
   else {
     // Get interval:
-    $time_to_end = date_diff($now, $end_time);
+    $time_to_end = date_diff($now, date_create($end_time));
     $time_remaining = display_time_remaining($time_to_end) . ' remaining';
   }
   
@@ -61,4 +73,104 @@ function print_listing_li($item_id, $title, $desc, $price, $num_bids, $end_time)
   );
 }
 
+
+// send_mail_successful:
+// Send out emails to both buyer and seller in a successful auction
+function send_mail_successful($auction_Id)
+{
+  // Connect to the database
+  $DBHOST = "localhost";
+  $DBUSER = "root";
+  $DBPWD = "123456";
+  $DBNAME = "auction_3";
+  // connect_to_database($DBHOST, $DBUSER, $DBPWD, $DBNAME);
+  $conn = new mysqli($DBHOST, $DBUSER, $DBPWD, $DBNAME);	
+  if($conn->connect_error)
+  {
+    die("Connection failed!".$conn->connect_error);
+  }
+
+  // Retrieve buyerId and sellerId from itemauction
+  $statement = "SELECT * FROM itemauction WHERE auctionId=?";
+  $stmt = $conn->prepare($statement);
+  $stmt->bind_param("i", $auction_Id);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $row = $result->fetch_assoc();
+  $buyerId = $row["buyerId"];
+  $sellerId = $row["sellerId"];
+  $current_price = $row["bidPrice"];
+  $auction_title = $row["auctionTitle"];
+
+  // Retrieve their emails using buyerId and sellerId from account
+  $statement_email = "SELECT emailAddress FROM account WHERE userId=?";
+  $stmt = $conn->prepare($statement);
+  $stmt->bind_param("i", $buyerId);
+  $stmt->execute();
+  $buyer_email = $stmt->get_result();
+  $stmt->bind_param("i", $sellerId);
+  $stmt->execute();
+  $seller_email = $stmt->get_result();
+
+  // Send out the emails
+  $name = "COMP0178 Group11"; //sender’s name
+  $sender_email = "comp.ucl.test@gmail.com"; //sender’s e-mail address
+  $recipient = "cwh9108@gmail.com"; //recipient
+  $subject = "Auction Result"; //subject
+  $mail_body= "Auction ID: ($auction_Id) \nAuction Title:$auction_title\nThe auction was ended sucessfully, The final bid price was £$current_price"; //mail body
+  $header = "From: ". $name . " <" . $sender_email . ">\r\n";
+  //optional headerfields
+  mail($recipient, $subject, $mail_body, $header); //mail function
+}
+
+
+// // send_mail_unsuccessful:
+// // Send out emails to all users who bidded on and the seller in an unsuccessful auction
+// function send_mail_successful($auction_Id)
+// {
+//   // Connect to the database
+//   $DBHOST = "localhost";
+//   $DBUSER = "root";
+//   $DBPWD = "";
+//   $DBNAME = "auction_3";
+//   // connect_to_database($DBHOST, $DBUSER, $DBPWD, $DBNAME);
+//   $conn = new mysqli($DBHOST, $DBUSER, $DBPWD, $DBNAME);	
+//   if($conn->connect_error)
+//   {
+//     die("Connection failed!".$conn->connect_error);
+//   }
+
+//   // Retrieve sellerId from itemauction
+//   $statement = "SELECT * FROM itemauction WHERE auctionId=?";
+//   $stmt = $conn->prepare($statement);
+//   $stmt->bind_param("i", $auction_Id);
+//   $stmt->execute();
+//   $result = $stmt->get_result();
+//   $row = $result->fetch_assoc();
+//   $buyerId = $row["buyerId"];
+//   $sellerId = $row["sellerId"];
+//   $current_price = $row["bidPrice"];
+//   $auction_title = $row["auctionTitle"];
+
+//   // TODO
+//   // // Retrieve their emails using buyerId and sellerId from account
+//   // $statement_email = "SELECT emailAddress FROM account WHERE userId=?";
+//   // $stmt = $conn->prepare($statement);
+//   // $stmt->bind_param("i", $buyerId);
+//   // $stmt->execute();
+//   // $buyer_email = $stmt->get_result();
+//   // $stmt->bind_param("i", $sellerId);
+//   // $stmt->execute();
+//   // $seller_email = $stmt->get_result();
+
+//   // // Send out the emails
+//   // $name = "COMP0178 Group11"; //sender’s name
+//   // $sender_email = "comp.ucl.test@gmail.com"; //sender’s e-mail address
+//   // $recipient = "cwh9108@gmail.com"; //recipient
+//   // $subject = "Auction Result"; //subject
+//   // $mail_body= "Auction ID: ($auction_Id) \nAuction Title:$auction_title\nThe auction was ended unsucessfully, The final bid price was £$current_price."; //mail body
+//   // $header = "From: ". $name . " <" . $sender_email . ">\r\n";
+//   // //optional headerfields
+//   // mail($recipient, $subject, $mail_body, $header); //mail function
+// }
 ?>
